@@ -1,34 +1,44 @@
-# Quick Settle Static
+# Quick Settle
 
-Bản HTML tĩnh chuyển đổi từ ý tưởng repo `quick-settle`: dùng trực tiếp trên browser, không cần backend/database.
+Quick Settle là công cụ chốt sổ sau một buổi chơi có nhiều người thắng/thua. Mục tiêu là nhập kết quả từng ván, tính NET từng người, sau đó gom thành danh sách chuyển khoản ít lệnh nhất có thể.
+
+## Mục đích
+
+- Tạo phiên chơi riêng cho từng buổi.
+- Quản lý người chơi trong phiên.
+- Ghi kết quả từng ván.
+- Sửa hoặc xóa ván bất kỳ khi phát hiện nhập sai.
+- Cho người chơi nghỉ ngang hoặc chơi lại.
+- Chốt sổ thành danh sách ai chuyển cho ai.
+- Hiện QR chuyển khoản nếu người nhận đã có đủ thông tin tài khoản.
+- Tải bản sao dữ liệu để cất giữ hoặc khôi phục lại khi đổi thiết bị.
 
 ## Cách dùng nhanh
 
-1. Mở `index.html` bằng trình duyệt, hoặc host cả thư mục này lên GitHub Pages.
-2. Tạo phiên chơi.
-3. Thêm người chơi.
-4. Nhập kết quả từng ván: người thắng nhập số dương, người thua nhập số âm. Tổng mỗi ván phải bằng 0.
-5. Bấm **Chốt sổ** để sinh danh sách chuyển khoản tối ưu.
+1. Bấm **Tạo phiên**.
+2. Thêm người chơi ở màn **Người chơi**.
+3. Vào **Các ván** để nhập kết quả:
+   - Người thắng nhập số dương.
+   - Người thua nhập số âm.
+   - Tổng mỗi ván phải bằng `0`.
+4. Nếu có người nghỉ ngang, vào **Người chơi** và bấm **Nghỉ ngang**.
+5. Nếu phát hiện ván cũ bị sai, vào **Các ván** và bấm **Sửa** ở đúng ván đó.
+6. Khi xong, vào **Chốt sổ & QR** và bấm **Chốt sổ**.
+7. Người thua quét QR hoặc chuyển khoản theo danh sách hiển thị.
 
-## Lưu dữ liệu
+## Đưa lên GitHub Pages
 
-- `localStorage`: lưu toàn bộ phiên, người chơi, ván, NET và giao dịch đã chốt.
-- `sessionStorage`: lưu phiên đang mở và nháp nhập ván theo từng tab.
-- Có nút Export/Import JSON để backup hoặc chuyển máy.
-
-## Deploy GitHub Pages
-
-Cách đơn giản:
-
-1. Tạo repo GitHub mới, ví dụ `quick-settle-static`.
-2. Upload `index.html` và `README.md` vào root repo.
+1. Tạo repository mới trên GitHub.
+2. Upload toàn bộ nội dung thư mục này lên repository.
 3. Vào **Settings → Pages**.
-4. Source: chọn `Deploy from a branch`.
-5. Branch: chọn `main`, folder `/root`.
-6. Save và mở URL GitHub Pages được cấp.
+4. Chọn branch chứa mã nguồn, thường là `main`.
+5. Chọn thư mục publish là root.
+6. Lưu lại và mở đường dẫn GitHub Pages được cấp.
 
-## Ghi chú kỹ thuật
+## Ghi chú về QR
 
-- Không dùng Maven, Java, Spring Boot, PostgreSQL.
-- Dùng Tailwind CDN và vanilla JavaScript.
-- Thuật toán chốt sổ: tách người âm / người dương, sort theo số dư lớn nhất, rồi match greedy đến khi hết nợ.
+QR chỉ hỗ trợ tạo ảnh để quét chuyển khoản. Ứng dụng không tự xác nhận tiền đã được nhận.
+
+## Bản quyền
+
+© 2026 Dương Việt Hoàng. All rights reserved.
