@@ -1,0 +1,137 @@
+{
+  "tailwindConfig": {
+    "hasWindowTailwind": true,
+    "configColorsFelt": null,
+    "bg_felt": "rgba(0, 0, 0, 0)",
+    "bg_felt2": "rgba(0, 0, 0, 0)",
+    "bg_card": "rgba(0, 0, 0, 0)",
+    "text_card": "rgb(0, 0, 0)",
+    "bg_clay": "rgba(0, 0, 0, 0)",
+    "bg_mint": "rgba(0, 0, 0, 0)",
+    "font_display": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "font_mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace"
+  },
+  "fonts": {
+    "bodyFontFamily": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+    "fontFaceCount": 53,
+    "fontFaces": [
+      "Fraunces 600 -> unloaded",
+      "Fraunces 600 -> unloaded",
+      "Fraunces 600 -> unloaded",
+      "Fraunces 750 -> unloaded",
+      "Fraunces 750 -> unloaded",
+      "Fraunces 750 -> unloaded",
+      "Inter 400 -> unloaded",
+      "Inter 400 -> unloaded",
+      "Inter 400 -> unloaded",
+      "Inter 400 -> unloaded",
+      "Inter 400 -> unloaded",
+      "Inter 400 -> unloaded",
+      "Inter 400 -> unloaded",
+      "Inter 500 -> unloaded",
+      "Inter 500 -> unloaded",
+      "Inter 500 -> unloaded",
+      "Inter 500 -> unloaded",
+      "Inter 500 -> unloaded",
+      "Inter 500 -> unloaded",
+      "Inter 500 -> unloaded",
+      "Inter 600 -> unloaded",
+      "Inter 600 -> unloaded",
+      "Inter 600 -> unloaded",
+      "Inter 600 -> unloaded",
+      "Inter 600 -> unloaded",
+      "Inter 600 -> unloaded",
+      "Inter 600 -> unloaded",
+      "Inter 700 -> unloaded",
+      "Inter 700 -> unloaded",
+      "Inter 700 -> unloaded",
+      "Inter 700 -> unloaded",
+      "Inter 700 -> unloaded",
+      "Inter 700 -> unloaded",
+      "Inter 700 -> unloaded",
+      "Inter 800 -> unloaded",
+      "Inter 800 -> unloaded",
+      "Inter 800 -> unloaded",
+      "Inter 800 -> unloaded",
+      "Inter 800 -> unloaded",
+      "Inter 800 -> unloaded",
+      "Inter 800 -> unloaded",
+      "JetBrains Mono 500 -> unloaded",
+      "JetBrains Mono 500 -> unloaded",
+      "JetBrains Mono 500 -> unloaded",
+      "JetBrains Mono 500 -> unloaded",
+      "JetBrains Mono 500 -> unloaded",
+      "JetBrains Mono 500 -> unloaded",
+      "JetBrains Mono 700 -> unloaded",
+      "JetBrains Mono 700 -> unloaded",
+      "JetBrains Mono 700 -> unloaded",
+      "JetBrains Mono 700 -> unloaded",
+      "JetBrains Mono 700 -> unloaded",
+      "JetBrains Mono 700 -> unloaded"
+    ],
+    "interLoaded": false,
+    "frauncesLoaded": false,
+    "jetbrainsLoaded": false
+  },
+  "qrImages": [],
+  "playersLayout": {
+    "sectionWidth": 1116,
+    "formGridTemplateColumns": "228px 228px 228px 228px 84.2188px",
+    "formClientWidth": 1076,
+    "formScrollWidth": 1076,
+    "formOverflowsX": false,
+    "inputCount": 4,
+    "firstCardClientWidth": 1076,
+    "firstCardScrollWidth": 1076
+  },
+  "guideModal": {
+    "overlayBg": "rgba(0, 0, 0, 0)",
+    "cardBg": "rgba(0, 0, 0, 0)",
+    "cardColor": "rgb(0, 0, 0)",
+    "flowBg": "linear-gradient(90deg, rgba(18, 55, 42, 0.08) 1px, rgba(0, 0, 0, 0) 1px), linear",
+    "modalDisplay": "flex"
+  },
+  "responsivePlayers": {
+    "mobile": {
+      "gridCols": "271px",
+      "formOverflowsX": false,
+      "bodyScrollW": 375,
+      "bodyClientW": 375,
+      "pageOverflowsX": false
+    },
+    "tablet": {
+      "gridCols": "648px",
+      "formOverflowsX": false,
+      "bodyScrollW": 768,
+      "bodyClientW": 768,
+      "pageOverflowsX": false
+    },
+    "lg-1024": {
+      "gridCols": "228px 228px 228px 228px 84.2188px",
+      "formOverflowsX": false,
+      "bodyScrollW": 1528,
+      "bodyClientW": 1024,
+      "pageOverflowsX": true
+    },
+    "desktop-1280": {
+      "gridCols": "228px 228px 228px 228px 84.2188px",
+      "formOverflowsX": false,
+      "bodyScrollW": 1528,
+      "bodyClientW": 1280,
+      "pageOverflowsX": true
+    },
+    "desktop-1920": {
+      "gridCols": "228px 228px 228px 228px 84.2188px",
+      "formOverflowsX": false,
+      "bodyScrollW": 1920,
+      "bodyClientW": 1920,
+      "pageOverflowsX": false
+    }
+  },
+  "console": [
+    "[warning] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation",
+    "[error] Failed to load resource: the server responded with a status of 404 (File not found)"
+  ],
+  "pageErrors": [],
+  "failedRequests": []
+}
