@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="vi" class="scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quick Settle — Chốt sổ chơi bài</title>
+  <meta name="description" content="Quick Settle giúp tạo phiên chơi, quản lý người chơi, nhập kết quả từng ván, chốt sổ và tạo QR chuyển khoản." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%2312372A'/><circle cx='16' cy='16' r='14' fill='none' stroke='%23C9973A' stroke-width='2' stroke-dasharray='4 3'/><circle cx='16' cy='16' r='6' fill='%23FFF9EC'/></svg>" />
+  <!-- Tailwind Play CDN phải nạp TRƯỚC, sau đó mới gán tailwind.config (nếu ngược lại, CDN sẽ ghi đè và bỏ qua config tuỳ biến). -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./assets/js/tailwind.config.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,750&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/styles.css" />
+</head>
+<body class="min-h-screen felt-pattern text-card antialiased">
+  <div id="app" class="min-h-screen">
+    <header class="no-print sticky top-0 z-30 border-b border-white/10 bg-felt2/85 backdrop-blur-xl">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <button id="homeBtn" class="group flex items-center gap-3 rounded-2xl text-left focus:outline-none focus:ring-2 focus:ring-mint focus:ring-offset-2 focus:ring-offset-felt2">
+          <span class="chip h-10 w-10 rounded-full shadow-insetRail" aria-hidden="true"></span>
+          <span>
+            <span class="block font-display text-xl font-bold tracking-tight text-card">Quick Settle</span>
+            <span class="block text-xs font-medium uppercase tracking-[.24em] text-card/55">chốt sổ nhanh</span>
+          </span>
+        </button>
+        <div class="flex items-center gap-2">
+          <button id="guideBtn" class="rounded-full border border-white/12 px-4 py-2 text-sm font-semibold text-card/80 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-mint">Cách dùng</button>
+          <button id="printBtn" class="rounded-full border border-white/12 px-4 py-2 text-sm font-semibold text-card/80 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-mint">In kết quả</button>
+          <button id="newSessionTopBtn" class="rounded-full bg-card px-4 py-2 text-sm font-extrabold text-felt transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-mint">Tạo phiên</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[360px_1fr] lg:px-8">
+      <aside class="no-print space-y-4 lg:sticky lg:top-20 lg:self-start">
+        <section class="rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="font-mono text-xs font-bold uppercase tracking-[.2em] text-clay">Bàn đang lưu</p>
+              <h1 class="mt-1 font-display text-3xl font-bold leading-tight">Chốt sổ gọn sau mỗi buổi chơi.</h1>
+            </div>
+            <span id="totalSessionBadge" class="rounded-full bg-felt px-3 py-1 font-mono text-xs font-bold text-card">0</span>
+          </div>
+          <p class="mt-3 text-sm leading-6 text-ink/70">Tạo bàn, nhập người chơi, ghi kết quả từng ván và nhận danh sách thanh toán tối ưu kèm QR chuyển khoản.</p>
+          <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+            <div class="rounded-2xl bg-white/65 p-3"><p id="statPlayers" class="font-mono text-lg font-extrabold text-felt">0</p><p class="text-[11px] font-bold uppercase tracking-wide text-ink/50">người</p></div>
+            <div class="rounded-2xl bg-white/65 p-3"><p id="statRounds" class="font-mono text-lg font-extrabold text-felt">0</p><p class="text-[11px] font-bold uppercase tracking-wide text-ink/50">ván</p></div>
+            <div class="rounded-2xl bg-white/65 p-3"><p id="statTransfers" class="font-mono text-lg font-extrabold text-felt">0</p><p class="text-[11px] font-bold uppercase tracking-wide text-ink/50">lệnh</p></div>
+          </div>
+        </section>
+
+        <section class="rail-card rounded-[2rem] p-4 text-ink shadow-card print-card">
+          <div class="mb-3 flex items-center justify-between gap-2">
+            <h2 class="font-bold">Danh sách phiên</h2>
+            <button id="seedSampleBtn" class="rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-card transition hover:bg-felt">Nạp mẫu</button>
+          </div>
+          <div id="sessionList" class="thin-scrollbar max-h-[42vh] space-y-2 overflow-auto pr-1"></div>
+        </section>
+
+        <section class="rail-card rounded-[2rem] p-4 text-ink shadow-card print-card">
+          <h2 class="font-bold">Bản sao dữ liệu</h2>
+          <p class="mt-1 text-sm text-ink/65">Tải bản sao để cất giữ hoặc khôi phục lại khi đổi thiết bị.</p>
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <button id="exportBtn" class="rounded-2xl border border-felt/15 px-3 py-2 text-sm font-bold hover:bg-white">Tải bản sao</button>
+            <label class="cursor-pointer rounded-2xl border border-felt/15 px-3 py-2 text-center text-sm font-bold hover:bg-white">
+              Khôi phục
+              <input id="importInput" type="file" accept="application/json" class="hidden" />
+            </label>
+            <button id="clearSessionBtn" class="rounded-2xl border border-felt/15 px-3 py-2 text-sm font-bold hover:bg-white">Xóa phiên này</button>
+            <button id="clearAllBtn" class="rounded-2xl bg-clay px-3 py-2 text-sm font-bold text-white hover:bg-clay/90">Xóa tất cả</button>
+          </div>
+        </section>
+      </aside>
+
+      <section class="min-w-0 space-y-5">
+        <div id="emptyState" class="hidden rail-card rounded-[2.2rem] p-8 text-ink shadow-card print-card sm:p-10">
+          <p class="font-mono text-xs font-bold uppercase tracking-[.24em] text-clay">Bắt đầu</p>
+          <h2 class="mt-2 max-w-2xl font-display text-4xl font-bold leading-tight sm:text-5xl">Tạo một phiên chơi, nhập người chơi và kết quả từng ván.</h2>
+          <p class="mt-4 max-w-2xl text-base leading-7 text-ink/70">Mỗi ván cần tổng thắng/thua bằng 0. Khi chốt sổ, hệ thống sẽ gom người âm trả cho người dương để giảm số lần chuyển khoản.</p>
+          <form id="createSessionForm" class="mt-6 flex flex-col gap-3 sm:flex-row">
+            <input id="sessionNameInput" maxlength="60" class="min-h-12 flex-1 rounded-2xl border border-felt/15 bg-white px-4 text-base font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Ví dụ: Tối thứ bảy nhà Hoàng" />
+            <button class="min-h-12 rounded-2xl bg-felt px-6 font-extrabold text-card hover:bg-felt2 focus:outline-none focus:ring-4 focus:ring-mint/25">Tạo phiên mới</button>
+          </form>
+        </div>
+
+        <div id="sessionView" class="hidden space-y-5">
+          <section class="rail-card overflow-hidden rounded-[2.2rem] text-ink shadow-card print-card">
+            <div class="grid gap-0 lg:grid-cols-[1fr_270px]">
+              <div class="p-6 sm:p-8">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span id="statusBadge" class="rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-[.15em]"></span>
+                  <span id="roomCode" class="rounded-full bg-ink px-3 py-1 font-mono text-xs font-bold text-card"></span>
+                </div>
+                <h2 id="sessionTitle" class="mt-3 font-display text-4xl font-bold leading-tight sm:text-5xl"></h2>
+                <p id="sessionMeta" class="mt-2 text-sm text-ink/60"></p>
+                <div id="cashRail" class="mt-6 grid gap-2 sm:grid-cols-3"></div>
+              </div>
+              <div class="bg-felt p-6 text-card sm:p-8">
+                <p class="font-mono text-xs font-bold uppercase tracking-[.2em] text-mint">Quy tắc chốt</p>
+                <ul class="mt-4 space-y-3 text-sm leading-6 text-card/78">
+                  <li class="flex gap-2"><span class="mt-1 h-2 w-2 rounded-full bg-mint"></span><span>Tổng mỗi ván phải bằng <b>0</b>.</span></li>
+                  <li class="flex gap-2"><span class="mt-1 h-2 w-2 rounded-full bg-brass"></span><span>Người nghỉ ngang sẽ không hiện ở ván mới.</span></li>
+                  <li class="flex gap-2"><span class="mt-1 h-2 w-2 rounded-full bg-clay"></span><span>QR chỉ hỗ trợ quét chuyển khoản, không tự xác nhận tiền đã nhận.</span></li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <nav class="no-print rail-card rounded-[2rem] p-2 text-ink shadow-card" aria-label="Điều hướng phiên">
+            <div class="grid gap-2 sm:grid-cols-4">
+              <button data-screen-tab="overview" class="screen-tab rounded-2xl px-4 py-3 text-sm font-extrabold transition">Tổng quan</button>
+              <button data-screen-tab="players" class="screen-tab rounded-2xl px-4 py-3 text-sm font-extrabold transition">Người chơi</button>
+              <button data-screen-tab="rounds" class="screen-tab rounded-2xl px-4 py-3 text-sm font-extrabold transition">Các ván</button>
+              <button data-screen-tab="settlement" class="screen-tab rounded-2xl px-4 py-3 text-sm font-extrabold transition">Chốt sổ & QR</button>
+            </div>
+          </nav>
+
+          <section id="overviewScreen" data-screen-panel="overview" class="screen-panel grid gap-5 xl:grid-cols-[1fr_1fr]">
+            <div class="rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="font-display text-2xl font-bold">NET hiện tại</h3>
+                <span id="netCheckBadge" class="rounded-full px-3 py-1 font-mono text-xs font-extrabold"></span>
+              </div>
+              <div id="netResults" class="mt-4 space-y-3"></div>
+            </div>
+            <div class="rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+              <h3 class="font-display text-2xl font-bold">Gợi ý thao tác</h3>
+              <div id="actionHints" class="mt-4 space-y-3"></div>
+            </div>
+          </section>
+
+          <section id="playersScreen" data-screen-panel="players" class="screen-panel rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 class="font-display text-2xl font-bold">Quản lý người chơi</h3>
+                <p class="mt-1 text-sm text-ink/60">Có thể sửa tên, tài khoản nhận tiền, cho nghỉ ngang hoặc cho chơi lại. Người đã có dữ liệu ván sẽ không bị xóa cứng để tránh hỏng lịch sử.</p>
+              </div>
+              <span id="playerCountBadge" class="rounded-full bg-felt px-3 py-1 font-mono text-xs font-bold text-card">0</span>
+            </div>
+
+            <datalist id="bankOptions"></datalist>
+
+            <form id="addPlayerForm" class="mt-5 grid gap-3 rounded-[1.6rem] bg-white/60 p-4 lg:grid-cols-[1.1fr_.8fr_.9fr_.9fr_auto]">
+              <input id="playerNameInput" maxlength="30" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên người chơi *" />
+              <input id="playerBankInput" list="bankOptions" maxlength="20" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Mã ngân hàng, ví dụ MBBank" />
+              <input id="playerAccountInput" maxlength="30" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Số tài khoản" />
+              <input id="playerAccountNameInput" maxlength="80" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên thụ hưởng" />
+              <button class="rounded-2xl bg-felt px-5 py-2 font-extrabold text-card hover:bg-felt2">Thêm</button>
+            </form>
+
+            <form id="editPlayerForm" class="mt-4 hidden rounded-[1.6rem] border border-brass/40 bg-brass/10 p-4">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <h4 id="editPlayerTitle" class="font-bold">Sửa người chơi</h4>
+                <button id="cancelEditPlayerBtn" type="button" class="rounded-full border border-felt/15 px-3 py-1.5 text-xs font-bold hover:bg-white">Hủy sửa</button>
+              </div>
+              <div class="mt-3 grid gap-3 lg:grid-cols-4">
+                <input id="editPlayerNameInput" maxlength="30" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên người chơi" />
+                <input id="editPlayerBankInput" list="bankOptions" maxlength="20" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Mã ngân hàng" />
+                <input id="editPlayerAccountInput" maxlength="30" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Số tài khoản" />
+                <input id="editPlayerAccountNameInput" maxlength="80" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên thụ hưởng" />
+              </div>
+              <button class="mt-3 rounded-2xl bg-felt px-5 py-2 text-sm font-extrabold text-card hover:bg-felt2">Lưu thay đổi</button>
+            </form>
+
+            <div id="playersList" class="mt-4 grid gap-3"></div>
+          </section>
+
+          <section id="roundsScreen" data-screen-panel="rounds" class="screen-panel space-y-5">
+            <div class="rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 id="roundFormTitle" class="font-display text-2xl font-bold">Nhập ván mới</h3>
+                  <p id="roundFormHint" class="mt-1 text-sm text-ink/60">Chỉ người đang chơi mới hiện trong form ván mới. Ô cuối có thể tự cân bằng.</p>
+                </div>
+                <div id="roundSumBadge" class="rounded-full px-3 py-1 font-mono text-xs font-extrabold"></div>
+              </div>
+              <form id="addRoundForm" class="mt-4 space-y-3">
+                <div id="roundInputs" class="space-y-2"></div>
+                <div class="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
+                  <input id="roundNoteInput" class="min-h-11 rounded-2xl border border-felt/15 bg-white px-4 text-sm outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Ghi chú ván, ví dụ: ván 3 cây" />
+                  <button id="cancelEditRoundBtn" type="button" class="hidden rounded-2xl border border-felt/15 px-4 py-2 text-sm font-bold hover:bg-white">Hủy sửa</button>
+                  <button id="balanceLastBtn" type="button" class="rounded-2xl border border-felt/15 px-4 py-2 text-sm font-bold hover:bg-white">Cân ô cuối</button>
+                  <button id="saveRoundBtn" class="rounded-2xl bg-felt px-5 py-2 text-sm font-extrabold text-card hover:bg-felt2">Lưu ván</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="font-display text-2xl font-bold">Lịch sử ván</h3>
+                <button id="undoRoundBtn" class="rounded-2xl border border-felt/15 px-4 py-2 text-sm font-bold hover:bg-white">Hoàn tác ván cuối</button>
+              </div>
+              <div id="roundsList" class="mt-4 space-y-3"></div>
+            </div>
+          </section>
+
+          <section id="settlementScreen" data-screen-panel="settlement" class="screen-panel rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 class="font-display text-2xl font-bold">Chốt sổ tối ưu & QR chuyển khoản</h3>
+                <p class="mt-1 max-w-3xl text-sm leading-6 text-ink/60">Sau khi chốt sổ, mỗi lệnh có thể hiện QR nếu người nhận đã nhập mã ngân hàng và số tài khoản.</p>
+              </div>
+              <button id="settleBtn" class="rounded-2xl bg-clay px-4 py-2 text-sm font-extrabold text-white hover:bg-clay/90">Chốt sổ</button>
+            </div>
+            <div id="settlementResults" class="mt-4 grid gap-3"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="no-print mx-auto max-w-7xl px-4 pb-8 text-center text-xs text-card/55 sm:px-6 lg:px-8">
+      © 2026 Dương Việt Hoàng. All rights reserved.
+    </footer>
+  </div>
+
+  <div id="guideModal" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-felt2/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="guideModalTitle">
+    <div class="modal-in guide-card-shadow max-h-[92vh] w-full max-w-4xl overflow-auto rounded-[2.2rem] bg-card text-ink">
+      <div class="flex items-start justify-between gap-4 border-b border-felt/10 p-5 sm:p-6">
+        <div>
+          <p class="font-mono text-xs font-bold uppercase tracking-[.22em] text-clay">Hướng dẫn nhanh</p>
+          <h2 id="guideModalTitle" class="mt-1 font-display text-3xl font-bold">Quick Settle dùng để làm gì?</h2>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-ink/65">Dùng sau một buổi chơi có nhiều người thắng/thua để biết ai cần chuyển cho ai, số tiền bao nhiêu và có thể quét QR để thanh toán.</p>
+        </div>
+        <button id="closeGuideBtn" class="rounded-full border border-felt/15 px-3 py-2 text-sm font-bold hover:bg-white focus:outline-none focus:ring-4 focus:ring-mint/25">Đóng</button>
+      </div>
+      <div class="guide-flow p-5 sm:p-7">
+        <div class="grid gap-4 md:grid-cols-5">
+          <div class="rounded-3xl bg-white/85 p-4 shadow-sm">
+            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-felt font-mono text-sm font-bold text-card">1</div>
+            <h3 class="mt-3 font-bold">Tạo phiên</h3>
+            <p class="mt-1 text-sm text-ink/65">Đặt tên bàn chơi để dễ tìm lại.</p>
+          </div>
+          <div class="rounded-3xl bg-white/85 p-4 shadow-sm">
+            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-felt font-mono text-sm font-bold text-card">2</div>
+            <h3 class="mt-3 font-bold">Thêm người</h3>
+            <p class="mt-1 text-sm text-ink/65">Nhập tên và tài khoản nhận tiền nếu muốn hiện QR.</p>
+          </div>
+          <div class="rounded-3xl bg-white/85 p-4 shadow-sm">
+            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-felt font-mono text-sm font-bold text-card">3</div>
+            <h3 class="mt-3 font-bold">Ghi từng ván</h3>
+            <p class="mt-1 text-sm text-ink/65">Người thắng nhập số dương, người thua nhập số âm.</p>
+          </div>
+          <div class="rounded-3xl bg-white/85 p-4 shadow-sm">
+            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-felt font-mono text-sm font-bold text-card">4</div>
+            <h3 class="mt-3 font-bold">Sửa khi sai</h3>
+            <p class="mt-1 text-sm text-ink/65">Có thể sửa hoặc xóa ván bất kỳ trước khi chốt.</p>
+          </div>
+          <div class="rounded-3xl bg-white/85 p-4 shadow-sm">
+            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-clay font-mono text-sm font-bold text-white">5</div>
+            <h3 class="mt-3 font-bold">Chốt & quét</h3>
+            <p class="mt-1 text-sm text-ink/65">Nhận danh sách chuyển khoản tối ưu và QR cho từng lệnh.</p>
+          </div>
+        </div>
+        <div class="mt-6 rounded-[1.8rem] bg-felt p-5 text-card">
+          <p class="font-mono text-xs font-bold uppercase tracking-[.2em] text-mint">Cách nhập tiền</p>
+          <div class="mt-3 grid gap-3 md:grid-cols-3">
+            <div class="rounded-2xl bg-white/10 p-4"><p class="font-bold">Thắng</p><p class="mt-1 font-mono text-lg text-mint">+120.000</p></div>
+            <div class="rounded-2xl bg-white/10 p-4"><p class="font-bold">Thua</p><p class="mt-1 font-mono text-lg text-brass">-70.000</p></div>
+            <div class="rounded-2xl bg-white/10 p-4"><p class="font-bold">Tổng ván</p><p class="mt-1 font-mono text-lg text-card">phải bằng 0</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="no-print pointer-events-none fixed bottom-5 left-1/2 z-50 hidden w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-3xl border border-white/15 bg-felt2/95 p-4 text-card shadow-2xl backdrop-blur"></div>
+
+  <script src="./assets/js/storage.js"></script>
+  <script src="./assets/js/domain.js"></script>
+  <script src="./assets/js/ui.js"></script>
+  <script src="./assets/js/app.js"></script>
+</body>
+</html>
