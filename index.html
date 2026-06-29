@@ -252,7 +252,8 @@
       const app = {
         data: loadData(),
         currentSessionId: sessionStorage.getItem(CURRENT_SESSION_KEY) || null,
-        toastTimer: null
+        toastTimer: null,
+        forceCreateView: false
       };
 
       function nowIso() { return new Date().toISOString(); }
@@ -311,6 +312,7 @@
         return app.data.sessions.find((session) => session.id === app.currentSessionId) || null;
       }
       function ensureCurrentSession() {
+        if (app.forceCreateView) return;
         if (getCurrentSession()) return;
         const latest = [...app.data.sessions].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0];
         setCurrentSession(latest ? latest.id : null);
@@ -340,6 +342,7 @@
         };
         app.data.sessions.unshift(session);
         setCurrentSession(session.id);
+        app.forceCreateView = false;
         saveData();
         return session;
       }
@@ -448,7 +451,7 @@
 
       function render() {
         ensureCurrentSession();
-        const session = getCurrentSession();
+        const session = app.forceCreateView ? null : getCurrentSession();
         const emptyState = $('emptyState');
         const sessionView = $('sessionView');
         $('totalSessionBadge').textContent = app.data.sessions.length;
@@ -488,6 +491,7 @@
           </button>`;
         }).join('');
         list.querySelectorAll('.session-item').forEach((button) => button.addEventListener('click', () => {
+          app.forceCreateView = false;
           setCurrentSession(button.dataset.sessionId);
           render();
         }));
@@ -668,8 +672,9 @@
       }
 
       function bindEvents() {
-        $('homeBtn').addEventListener('click', () => { setCurrentSession(null); render(); });
+        $('homeBtn').addEventListener('click', () => { app.forceCreateView = false; setCurrentSession(null); render(); });
         $('newSessionTopBtn').addEventListener('click', () => {
+          app.forceCreateView = true;
           setCurrentSession(null);
           render();
           $('sessionNameInput')?.focus();
@@ -735,6 +740,7 @@
             const parsed = JSON.parse(await file.text());
             if (!parsed || !Array.isArray(parsed.sessions)) throw new Error('File JSON không đúng định dạng Quick Settle');
             app.data = { version: 1, sessions: parsed.sessions };
+            app.forceCreateView = false;
             setCurrentSession(app.data.sessions[0]?.id || null);
             saveData();
             render();
@@ -747,6 +753,7 @@
           if (!session) return showToast('Chưa chọn phiên', 'error');
           if (!confirm(`Xóa phiên "${session.name}"?`)) return;
           app.data.sessions = app.data.sessions.filter((s) => s.id !== session.id);
+          app.forceCreateView = false;
           setCurrentSession(app.data.sessions[0]?.id || null);
           saveData();
           render();
@@ -755,6 +762,7 @@
         $('clearAllBtn').addEventListener('click', () => {
           if (!confirm('Xóa toàn bộ dữ liệu Quick Settle trong trình duyệt này?')) return;
           app.data = { version: 1, sessions: [] };
+          app.forceCreateView = false;
           setCurrentSession(null);
           localStorage.removeItem(STORAGE_KEY);
           Object.keys(sessionStorage).forEach((key) => { if (key.startsWith(ROUND_DRAFT_KEY_PREFIX)) sessionStorage.removeItem(key); });
