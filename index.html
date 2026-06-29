@@ -654,15 +654,16 @@
               <span class="font-mono text-sm font-extrabold ${result.amount > 0 ? 'text-emerald-700' : result.amount < 0 ? 'text-clay' : 'text-ink/60'}">${signedMoney(result.amount)}</span>
             </div>`;
           }).join('');
-          return `<details class="rounded-3xl bg-white/55 p-4" ${round.roundNumber === session.rounds.length ? 'open' : ''}>
-            <summary class="cursor-pointer list-none">
-              <div class="flex items-center justify-between gap-3">
-                <div><p class="font-bold">Ván ${round.roundNumber}</p><p class="text-xs text-ink/50">${formatDate(round.createdAt)}${round.notes ? ' · ' + escapeHtml(round.notes) : ''}</p></div>
-                <span class="rounded-full bg-felt/10 px-3 py-1 font-mono text-xs font-bold text-felt">sum 0</span>
+          return `<article class="rounded-3xl bg-white/55 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="font-bold">Ván ${round.roundNumber}</p>
+                <p class="text-xs text-ink/50">${formatDate(round.createdAt)}${round.notes ? ' · ' + escapeHtml(round.notes) : ''}</p>
               </div>
-            </summary>
+              <span class="shrink-0 rounded-full bg-felt/10 px-3 py-1 font-mono text-xs font-bold text-felt">sum 0</span>
+            </div>
             <div class="mt-3 grid gap-2 sm:grid-cols-2">${rows}</div>
-          </details>`;
+          </article>`;
         }).join('');
       }
 
