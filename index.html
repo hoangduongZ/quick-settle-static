@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="vi" class="scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quick Settle Static — Chốt sổ chơi bài</title>
+  <meta name="description" content="Quick Settle bản HTML tĩnh: tạo phiên, nhập kết quả, tính NET và chốt sổ tối ưu ngay trên trình duyệt." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+            display: ['Fraunces', 'Georgia', 'serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
+          },
+          colors: {
+            felt: '#12372A',
+            felt2: '#0B241C',
+            card: '#FFF9EC',
+            ink: '#1A1815',
+            brass: '#C9973A',
+            clay: '#B7552F',
+            mint: '#69D7A5'
+          },
+          boxShadow: {
+            card: '0 18px 55px rgba(7, 20, 15, .18)',
+            insetRail: 'inset 0 0 0 1px rgba(255,255,255,.12)'
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,750&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: light; }
+    body {
+      background:
+        radial-gradient(circle at 18% 12%, rgba(105, 215, 165, .18), transparent 28rem),
+        radial-gradient(circle at 84% 0%, rgba(201, 151, 58, .16), transparent 30rem),
+        linear-gradient(135deg, #0B241C 0%, #12372A 54%, #0E2C23 100%);
+    }
+    .felt-pattern {
+      background-image:
+        linear-gradient(45deg, rgba(255,255,255,.025) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255,255,255,.02) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255,255,255,.02) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255,255,255,.02) 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0px;
+    }
+    .rail-card {
+      background: linear-gradient(180deg, rgba(255, 249, 236, .98), rgba(255, 246, 225, .94));
+    }
+    .thin-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+    .thin-scrollbar::-webkit-scrollbar-thumb { background: rgba(18, 55, 42, .28); border-radius: 999px; }
+    .chip {
+      background: repeating-radial-gradient(circle at 50% 50%, #FFF9EC 0 5px, #C9973A 6px 8px, #B7552F 9px 12px);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .soft-pop { animation: softPop .24s ease-out; }
+      @keyframes softPop { from { transform: translateY(6px); opacity: .72; } to { transform: translateY(0); opacity: 1; } }
+    }
+    @media print {
+      body { background: white !important; }
+      .no-print { display: none !important; }
+      .print-card { box-shadow: none !important; border: 1px solid #ddd !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen felt-pattern text-card antialiased">
+  <div id="app" class="min-h-screen">
+    <header class="no-print sticky top-0 z-30 border-b border-white/10 bg-felt2/85 backdrop-blur-xl">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <button id="homeBtn" class="group flex items-center gap-3 text-left focus:outline-none focus:ring-2 focus:ring-mint focus:ring-offset-2 focus:ring-offset-felt2 rounded-2xl">
+          <span class="chip h-10 w-10 rounded-full shadow-insetRail"></span>
+          <span>
+            <span class="block font-display text-xl font-bold tracking-tight text-card">Quick Settle</span>
+            <span class="block text-xs font-medium uppercase tracking-[.24em] text-card/55">static browser app</span>
+          </span>
+        </button>
+        <div class="flex items-center gap-2">
+          <span id="storageModeBadge" class="hidden rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-card/75 sm:inline-flex">localStorage</span>
+          <button id="printBtn" class="rounded-full border border-white/12 px-4 py-2 text-sm font-semibold text-card/80 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-mint">In kết quả</button>
+          <button id="newSessionTopBtn" class="rounded-full bg-card px-4 py-2 text-sm font-extrabold text-felt transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-mint">Tạo phiên</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[360px_1fr] lg:px-8">
+      <aside class="no-print space-y-4 lg:sticky lg:top-20 lg:self-start">
+        <section class="rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="font-mono text-xs font-bold uppercase tracking-[.2em] text-clay">Bàn đang lưu</p>
+              <h1 class="mt-1 font-display text-3xl font-bold leading-tight">Chốt sổ không cần backend.</h1>
+            </div>
+            <span id="totalSessionBadge" class="rounded-full bg-felt px-3 py-1 font-mono text-xs font-bold text-card">0</span>
+          </div>
+          <p class="mt-3 text-sm leading-6 text-ink/70">Dữ liệu được lưu trực tiếp trong trình duyệt. Có thể host bằng GitHub Pages, không cần Java, Maven, PostgreSQL hay server riêng.</p>
+          <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+            <div class="rounded-2xl bg-white/65 p-3">
+              <p id="statPlayers" class="font-mono text-lg font-extrabold text-felt">0</p>
+              <p class="text-[11px] font-bold uppercase tracking-wide text-ink/50">người</p>
+            </div>
+            <div class="rounded-2xl bg-white/65 p-3">
+              <p id="statRounds" class="font-mono text-lg font-extrabold text-felt">0</p>
+              <p class="text-[11px] font-bold uppercase tracking-wide text-ink/50">ván</p>
+            </div>
+            <div class="rounded-2xl bg-white/65 p-3">
+              <p id="statTransfers" class="font-mono text-lg font-extrabold text-felt">0</p>
+              <p class="text-[11px] font-bold uppercase tracking-wide text-ink/50">lệnh</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="rail-card rounded-[2rem] p-4 text-ink shadow-card print-card">
+          <div class="mb-3 flex items-center justify-between gap-2">
+            <h2 class="font-bold">Danh sách phiên</h2>
+            <button id="seedSampleBtn" class="rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-card transition hover:bg-felt">Nạp mẫu</button>
+          </div>
+          <div id="sessionList" class="thin-scrollbar max-h-[42vh] space-y-2 overflow-auto pr-1"></div>
+        </section>
+
+        <section class="rail-card rounded-[2rem] p-4 text-ink shadow-card print-card">
+          <h2 class="font-bold">Dữ liệu cá nhân</h2>
+          <p class="mt-1 text-sm text-ink/65">Export file JSON để backup hoặc chuyển sang máy khác.</p>
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <button id="exportBtn" class="rounded-2xl border border-felt/15 px-3 py-2 text-sm font-bold hover:bg-white">Export JSON</button>
+            <label class="cursor-pointer rounded-2xl border border-felt/15 px-3 py-2 text-center text-sm font-bold hover:bg-white">
+              Import JSON
+              <input id="importInput" type="file" accept="application/json" class="hidden" />
+            </label>
+            <button id="clearSessionBtn" class="rounded-2xl border border-felt/15 px-3 py-2 text-sm font-bold hover:bg-white">Xóa phiên này</button>
+            <button id="clearAllBtn" class="rounded-2xl bg-clay px-3 py-2 text-sm font-bold text-white hover:bg-clay/90">Xóa tất cả</button>
+          </div>
+        </section>
+      </aside>
+
+      <section class="space-y-5">
+        <div id="emptyState" class="hidden rail-card rounded-[2.2rem] p-8 text-ink shadow-card print-card sm:p-10">
+          <p class="font-mono text-xs font-bold uppercase tracking-[.24em] text-clay">Bắt đầu</p>
+          <h2 class="mt-2 max-w-2xl font-display text-4xl font-bold leading-tight sm:text-5xl">Tạo một phiên chơi, nhập người chơi và kết quả từng ván.</h2>
+          <p class="mt-4 max-w-2xl text-base leading-7 text-ink/70">Mỗi ván cần tổng thắng/thua bằng 0. Khi chốt sổ, app sẽ gom người âm trả cho người dương để giảm số lần chuyển khoản.</p>
+          <form id="createSessionForm" class="mt-6 flex flex-col gap-3 sm:flex-row">
+            <input id="sessionNameInput" maxlength="60" class="min-h-12 flex-1 rounded-2xl border border-felt/15 bg-white px-4 text-base font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Ví dụ: Tối thứ bảy nhà Hoàng" />
+            <button class="min-h-12 rounded-2xl bg-felt px-6 font-extrabold text-card hover:bg-felt2 focus:outline-none focus:ring-4 focus:ring-mint/25">Tạo phiên mới</button>
+          </form>
+        </div>
+
+        <div id="sessionView" class="hidden space-y-5">
+          <section class="rail-card overflow-hidden rounded-[2.2rem] text-ink shadow-card print-card">
+            <div class="grid gap-0 lg:grid-cols-[1fr_260px]">
+              <div class="p-6 sm:p-8">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span id="statusBadge" class="rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-[.15em]"></span>
+                  <span id="roomCode" class="rounded-full bg-ink px-3 py-1 font-mono text-xs font-bold text-card"></span>
+                </div>
+                <h2 id="sessionTitle" class="mt-3 font-display text-4xl font-bold leading-tight sm:text-5xl"></h2>
+                <p id="sessionMeta" class="mt-2 text-sm text-ink/60"></p>
+                <div id="cashRail" class="mt-6 grid gap-2 sm:grid-cols-3"></div>
+              </div>
+              <div class="bg-felt p-6 text-card sm:p-8">
+                <p class="font-mono text-xs font-bold uppercase tracking-[.2em] text-mint">Quy tắc chốt</p>
+                <ul class="mt-4 space-y-3 text-sm leading-6 text-card/78">
+                  <li class="flex gap-2"><span class="mt-1 h-2 w-2 rounded-full bg-mint"></span><span>Tổng mỗi ván phải bằng <b>0</b>.</span></li>
+                  <li class="flex gap-2"><span class="mt-1 h-2 w-2 rounded-full bg-brass"></span><span>Số dương là thắng, số âm là thua.</span></li>
+                  <li class="flex gap-2"><span class="mt-1 h-2 w-2 rounded-full bg-clay"></span><span>Chốt sổ sẽ tạo danh sách ai chuyển cho ai.</span></li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="grid gap-5 xl:grid-cols-[.9fr_1.1fr]">
+            <div class="rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="font-display text-2xl font-bold">Người chơi</h3>
+                <span id="playerCountBadge" class="rounded-full bg-felt px-3 py-1 font-mono text-xs font-bold text-card">0</span>
+              </div>
+              <form id="addPlayerForm" class="mt-4 flex gap-2">
+                <input id="playerNameInput" maxlength="30" class="min-h-11 flex-1 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên người chơi" />
+                <button class="rounded-2xl bg-felt px-4 font-extrabold text-card hover:bg-felt2">Thêm</button>
+              </form>
+              <div id="playersList" class="mt-4 space-y-2"></div>
+            </div>
+
+            <div class="rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 class="font-display text-2xl font-bold">Nhập ván mới</h3>
+                  <p class="mt-1 text-sm text-ink/60">Nhập số thắng/thua của từng người. Ô cuối có thể tự cân bằng.</p>
+                </div>
+                <div id="roundSumBadge" class="rounded-full px-3 py-1 font-mono text-xs font-extrabold"></div>
+              </div>
+              <form id="addRoundForm" class="mt-4 space-y-3">
+                <div id="roundInputs" class="space-y-2"></div>
+                <div class="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+                  <input id="roundNoteInput" class="min-h-11 rounded-2xl border border-felt/15 bg-white px-4 text-sm outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Ghi chú ván, ví dụ: ván 3 cây" />
+                  <button id="balanceLastBtn" type="button" class="rounded-2xl border border-felt/15 px-4 py-2 text-sm font-bold hover:bg-white">Cân ô cuối</button>
+                  <button class="rounded-2xl bg-felt px-5 py-2 text-sm font-extrabold text-card hover:bg-felt2">Lưu ván</button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <section class="grid gap-5 xl:grid-cols-[1fr_1fr]">
+            <div class="rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="font-display text-2xl font-bold">NET hiện tại</h3>
+                <span id="netCheckBadge" class="rounded-full px-3 py-1 font-mono text-xs font-extrabold"></span>
+              </div>
+              <div id="netResults" class="mt-4 space-y-3"></div>
+            </div>
+
+            <div class="rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="font-display text-2xl font-bold">Chốt sổ tối ưu</h3>
+                <button id="settleBtn" class="rounded-2xl bg-clay px-4 py-2 text-sm font-extrabold text-white hover:bg-clay/90">Chốt sổ</button>
+              </div>
+              <div id="settlementResults" class="mt-4 space-y-3"></div>
+            </div>
+          </section>
+
+          <section class="rail-card rounded-[2rem] p-5 text-ink shadow-card print-card">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-display text-2xl font-bold">Lịch sử ván</h3>
+              <button id="undoRoundBtn" class="rounded-2xl border border-felt/15 px-4 py-2 text-sm font-bold hover:bg-white">Hoàn tác ván cuối</button>
+            </div>
+            <div id="roundsList" class="mt-4 space-y-3"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="no-print pointer-events-none fixed bottom-5 left-1/2 z-50 hidden w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-3xl border border-white/15 bg-felt2/95 p-4 text-card shadow-2xl backdrop-blur"></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const STORAGE_KEY = 'quickSettle.static.v1';
+      const CURRENT_SESSION_KEY = 'quickSettle.currentSessionId';
+      const ROUND_DRAFT_KEY_PREFIX = 'quickSettle.roundDraft.';
+      const MAX_AMOUNT = 1_000_000_000;
+      const ROOM_CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+      const $ = (id) => document.getElementById(id);
+      const app = {
+        data: loadData(),
+        currentSessionId: sessionStorage.getItem(CURRENT_SESSION_KEY) || null,
+        toastTimer: null
+      };
+
+      function nowIso() { return new Date().toISOString(); }
+      function uid() {
+        if (crypto && crypto.randomUUID) return crypto.randomUUID();
+        return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+      }
+      function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
+      }
+      function parseAmount(value) {
+        if (value === null || value === undefined || value === '') return 0;
+        const cleaned = String(value).replace(/[₫đ,\s]/gi, '');
+        const parsed = Number(cleaned);
+        if (!Number.isFinite(parsed)) return NaN;
+        return Math.trunc(parsed);
+      }
+      function money(amount) {
+        const abs = Math.abs(Number(amount || 0));
+        return new Intl.NumberFormat('vi-VN').format(abs) + ' ₫';
+      }
+      function signedMoney(amount) {
+        if (amount > 0) return '+' + money(amount);
+        if (amount < 0) return '-' + money(amount);
+        return '0 ₫';
+      }
+      function formatDate(iso) {
+        try { return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso)); }
+        catch { return iso || ''; }
+      }
+      function clampText(text, max) {
+        return String(text || '').trim().slice(0, max);
+      }
+
+      function loadData() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return { version: 1, sessions: [] };
+          const parsed = JSON.parse(raw);
+          if (!parsed || !Array.isArray(parsed.sessions)) throw new Error('Invalid storage shape');
+          return parsed;
+        } catch (error) {
+          console.warn('Không đọc được localStorage, tạo dữ liệu mới.', error);
+          return { version: 1, sessions: [] };
+        }
+      }
+      function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(app.data));
+      }
+      function setCurrentSession(id) {
+        app.currentSessionId = id;
+        if (id) sessionStorage.setItem(CURRENT_SESSION_KEY, id);
+        else sessionStorage.removeItem(CURRENT_SESSION_KEY);
+      }
+      function getCurrentSession() {
+        return app.data.sessions.find((session) => session.id === app.currentSessionId) || null;
+      }
+      function ensureCurrentSession() {
+        if (getCurrentSession()) return;
+        const latest = [...app.data.sessions].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0];
+        setCurrentSession(latest ? latest.id : null);
+      }
+
+      function createRoomCode() {
+        for (let tries = 0; tries < 20; tries++) {
+          let code = '';
+          for (let i = 0; i < 6; i++) code += ROOM_CODE_CHARS[Math.floor(Math.random() * ROOM_CODE_CHARS.length)];
+          if (!app.data.sessions.some((s) => s.roomCode === code)) return code;
+        }
+        return 'ROOM' + Math.floor(Math.random() * 100).toString().padStart(2, '0');
+      }
+      function createSession(name) {
+        const safeName = clampText(name || 'Phiên chơi mới', 60);
+        if (!safeName) throw new Error('Tên phiên không được để trống');
+        const session = {
+          id: uid(),
+          name: safeName,
+          roomCode: createRoomCode(),
+          status: 'ACTIVE',
+          createdAt: nowIso(),
+          settledAt: null,
+          players: [],
+          rounds: [],
+          transactions: []
+        };
+        app.data.sessions.unshift(session);
+        setCurrentSession(session.id);
+        saveData();
+        return session;
+      }
+      function addPlayer(session, displayName) {
+        if (!session || session.status !== 'ACTIVE') throw new Error('Không thể thêm người chơi: phiên đã chốt sổ');
+        const name = clampText(displayName, 30);
+        if (!name) throw new Error('Tên người chơi không được để trống');
+        if (session.players.some((p) => p.displayName.toLowerCase() === name.toLowerCase())) throw new Error(`Tên người chơi "${name}" đã tồn tại`);
+        session.players.push({ id: uid(), displayName: name, createdAt: nowIso() });
+        session.transactions = [];
+        session.status = 'ACTIVE';
+        session.settledAt = null;
+        saveData();
+      }
+      function removePlayer(session, playerId) {
+        if (!session || session.status !== 'ACTIVE') throw new Error('Phiên đã chốt sổ, không thể xóa người chơi');
+        if (session.rounds.length > 0) throw new Error('Đã có ván chơi. Hãy xóa ván trước khi xóa người chơi.');
+        session.players = session.players.filter((p) => p.id !== playerId);
+        saveData();
+      }
+      function addRound(session, amountsByPlayer, notes) {
+        if (!session || session.status !== 'ACTIVE') throw new Error('Không thể thêm ván: phiên đã chốt sổ');
+        if (session.players.length < 2) throw new Error('Cần ít nhất 2 người chơi để thêm ván');
+        const results = session.players.map((player) => {
+          const amount = parseAmount(amountsByPlayer[player.id]);
+          if (Number.isNaN(amount)) throw new Error(`Số tiền của ${player.displayName} không hợp lệ`);
+          if (amount < -MAX_AMOUNT || amount > MAX_AMOUNT) throw new Error('Số tiền vượt quá giới hạn cho phép (±1,000,000,000)');
+          return { playerId: player.id, amount };
+        });
+        const sum = results.reduce((total, item) => total + item.amount, 0);
+        if (sum !== 0) throw new Error(`Tổng kết quả các người chơi phải bằng 0, hiện tại: ${signedMoney(sum)}`);
+        session.rounds.push({ id: uid(), roundNumber: session.rounds.length + 1, notes: clampText(notes, 120), createdAt: nowIso(), results });
+        session.transactions = [];
+        session.status = 'ACTIVE';
+        session.settledAt = null;
+        sessionStorage.removeItem(ROUND_DRAFT_KEY_PREFIX + session.id);
+        saveData();
+      }
+      function undoLastRound(session) {
+        if (!session || session.rounds.length === 0) throw new Error('Chưa có ván để hoàn tác');
+        if (session.status !== 'ACTIVE') throw new Error('Phiên đã chốt sổ. Hãy mở lại phiên trước khi hoàn tác.');
+        session.rounds.pop();
+        session.rounds.forEach((round, index) => round.roundNumber = index + 1);
+        session.transactions = [];
+        saveData();
+      }
+      function reopenSession(session) {
+        session.status = 'ACTIVE';
+        session.settledAt = null;
+        session.transactions = [];
+        saveData();
+      }
+      function calculateNet(session) {
+        const net = Object.fromEntries(session.players.map((player) => [player.id, 0]));
+        for (const round of session.rounds) {
+          for (const result of round.results) net[result.playerId] = (net[result.playerId] || 0) + Number(result.amount || 0);
+        }
+        return net;
+      }
+      function settleSession(session) {
+        if (!session) throw new Error('Không tìm thấy phiên');
+        if (session.players.length < 2) throw new Error('Cần ít nhất 2 người chơi để chốt sổ');
+        if (session.rounds.length < 1) throw new Error('Cần ít nhất 1 ván chơi để chốt sổ');
+        const net = calculateNet(session);
+        const total = Object.values(net).reduce((sum, value) => sum + value, 0);
+        if (total !== 0) throw new Error(`Dữ liệu không hợp lệ: tổng NET không bằng 0 (${signedMoney(total)})`);
+        const byId = Object.fromEntries(session.players.map((p) => [p.id, p]));
+        const debtors = [];
+        const creditors = [];
+        for (const [playerId, amount] of Object.entries(net)) {
+          if (amount < 0) debtors.push({ playerId, balance: amount });
+          if (amount > 0) creditors.push({ playerId, balance: amount });
+        }
+        debtors.sort((a, b) => a.balance - b.balance);
+        creditors.sort((a, b) => b.balance - a.balance);
+        const transactions = [];
+        let i = 0, j = 0;
+        while (i < debtors.length && j < creditors.length) {
+          const debtor = debtors[i];
+          const creditor = creditors[j];
+          const amount = Math.min(-debtor.balance, creditor.balance);
+          transactions.push({ id: uid(), fromPlayerId: debtor.playerId, toPlayerId: creditor.playerId, amount, createdAt: nowIso() });
+          debtor.balance += amount;
+          creditor.balance -= amount;
+          if (debtor.balance === 0) i++;
+          if (creditor.balance === 0) j++;
+        }
+        session.transactions = transactions.map((tx) => ({
+          ...tx,
+          fromName: byId[tx.fromPlayerId]?.displayName || 'Người trả',
+          toName: byId[tx.toPlayerId]?.displayName || 'Người nhận'
+        }));
+        session.status = 'SETTLED';
+        session.settledAt = nowIso();
+        saveData();
+      }
+
+      function showToast(message, type = 'info') {
+        const toast = $('toast');
+        const color = type === 'error' ? 'border-clay/60' : type === 'success' ? 'border-mint/50' : 'border-white/15';
+        toast.className = `no-print pointer-events-none fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-3xl border ${color} bg-felt2/95 p-4 text-card shadow-2xl backdrop-blur soft-pop`;
+        toast.innerHTML = `<p class="font-semibold">${escapeHtml(message)}</p>`;
+        clearTimeout(app.toastTimer);
+        app.toastTimer = setTimeout(() => toast.classList.add('hidden'), 2600);
+      }
+
+      function render() {
+        ensureCurrentSession();
+        const session = getCurrentSession();
+        const emptyState = $('emptyState');
+        const sessionView = $('sessionView');
+        $('totalSessionBadge').textContent = app.data.sessions.length;
+        renderSessionList();
+        if (!session) {
+          emptyState.classList.remove('hidden');
+          sessionView.classList.add('hidden');
+          $('statPlayers').textContent = '0';
+          $('statRounds').textContent = '0';
+          $('statTransfers').textContent = '0';
+          return;
+        }
+        emptyState.classList.add('hidden');
+        sessionView.classList.remove('hidden');
+        renderSession(session);
+      }
+
+      function renderSessionList() {
+        const list = $('sessionList');
+        if (app.data.sessions.length === 0) {
+          list.innerHTML = `<div class="rounded-3xl border border-dashed border-felt/20 p-4 text-sm text-ink/60">Chưa có phiên nào. Tạo phiên mới để bắt đầu.</div>`;
+          return;
+        }
+        list.innerHTML = app.data.sessions.map((session) => {
+          const active = session.id === app.currentSessionId;
+          const net = calculateNet(session);
+          const pot = Object.values(net).filter((v) => v > 0).reduce((a, b) => a + b, 0);
+          return `<button data-session-id="${session.id}" class="session-item w-full rounded-3xl border p-4 text-left transition ${active ? 'border-felt bg-felt text-card' : 'border-felt/10 bg-white/55 hover:bg-white'}">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <p class="font-bold ${active ? 'text-card' : 'text-ink'}">${escapeHtml(session.name)}</p>
+                <p class="mt-1 font-mono text-xs ${active ? 'text-card/60' : 'text-ink/50'}">${escapeHtml(session.roomCode)} · ${session.players.length} người · ${session.rounds.length} ván</p>
+              </div>
+              <span class="rounded-full px-2 py-1 text-[10px] font-extrabold ${session.status === 'SETTLED' ? 'bg-mint text-felt' : active ? 'bg-card/15 text-card' : 'bg-felt/10 text-felt'}">${session.status === 'SETTLED' ? 'CHỐT' : 'MỞ'}</span>
+            </div>
+            <p class="mt-2 text-xs ${active ? 'text-card/65' : 'text-ink/55'}">Tổng cần thanh toán: ${money(pot)}</p>
+          </button>`;
+        }).join('');
+        list.querySelectorAll('.session-item').forEach((button) => button.addEventListener('click', () => {
+          setCurrentSession(button.dataset.sessionId);
+          render();
+        }));
+      }
+
+      function renderSession(session) {
+        const net = calculateNet(session);
+        const totalNet = Object.values(net).reduce((a, b) => a + b, 0);
+        const totalPositive = Object.values(net).filter((v) => v > 0).reduce((a, b) => a + b, 0);
+        const totalNegative = Object.values(net).filter((v) => v < 0).reduce((a, b) => a + Math.abs(b), 0);
+
+        $('statPlayers').textContent = session.players.length;
+        $('statRounds').textContent = session.rounds.length;
+        $('statTransfers').textContent = session.transactions.length;
+        $('sessionTitle').textContent = session.name;
+        $('sessionMeta').textContent = `Tạo lúc ${formatDate(session.createdAt)}${session.settledAt ? ' · chốt lúc ' + formatDate(session.settledAt) : ''}`;
+        $('roomCode').textContent = 'Mã bàn ' + session.roomCode;
+        $('statusBadge').textContent = session.status === 'SETTLED' ? 'Đã chốt sổ' : 'Đang mở';
+        $('statusBadge').className = `rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-[.15em] ${session.status === 'SETTLED' ? 'bg-mint text-felt' : 'bg-brass/20 text-felt'}`;
+        $('cashRail').innerHTML = [
+          ['Tổng người thắng', totalPositive, 'text-mint bg-felt'],
+          ['Tổng người thua', totalNegative, 'text-clay bg-white'],
+          ['Sai lệch NET', totalNet, totalNet === 0 ? 'text-felt bg-white' : 'text-clay bg-white']
+        ].map(([label, value, cls]) => `<div class="rounded-3xl ${cls} p-4"><p class="text-xs font-bold uppercase tracking-wide opacity-65">${label}</p><p class="mt-1 font-mono text-xl font-extrabold">${label === 'Sai lệch NET' ? signedMoney(value) : money(value)}</p></div>`).join('');
+
+        renderPlayers(session, net);
+        renderRoundForm(session);
+        renderNetResults(session, net, totalNet);
+        renderSettlement(session);
+        renderRounds(session);
+      }
+
+      function renderPlayers(session, net) {
+        $('playerCountBadge').textContent = session.players.length + ' người';
+        const list = $('playersList');
+        if (session.players.length === 0) {
+          list.innerHTML = `<div class="rounded-3xl border border-dashed border-felt/20 p-4 text-sm text-ink/60">Thêm người chơi trước khi nhập ván.</div>`;
+          return;
+        }
+        list.innerHTML = session.players.map((player, index) => {
+          const amount = net[player.id] || 0;
+          const tone = amount > 0 ? 'text-emerald-700 bg-emerald-50' : amount < 0 ? 'text-red-700 bg-red-50' : 'text-ink/65 bg-white';
+          return `<div class="flex items-center justify-between gap-3 rounded-3xl bg-white/70 p-3">
+            <div class="flex min-w-0 items-center gap-3">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-felt font-mono text-xs font-bold text-card">${index + 1}</span>
+              <div class="min-w-0">
+                <p class="truncate font-bold">${escapeHtml(player.displayName)}</p>
+                <p class="font-mono text-xs text-ink/45">${escapeHtml(player.id.slice(0, 8))}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="rounded-full px-3 py-1 font-mono text-xs font-extrabold ${tone}">${signedMoney(amount)}</span>
+              <button data-remove-player="${player.id}" class="${session.status === 'ACTIVE' && session.rounds.length === 0 ? '' : 'hidden'} rounded-full px-2 py-1 text-xs font-bold text-clay hover:bg-clay/10">Xóa</button>
+            </div>
+          </div>`;
+        }).join('');
+        list.querySelectorAll('[data-remove-player]').forEach((button) => button.addEventListener('click', () => {
+          try { removePlayer(session, button.dataset.removePlayer); render(); showToast('Đã xóa người chơi', 'success'); }
+          catch (error) { showToast(error.message, 'error'); }
+        }));
+      }
+
+      function loadRoundDraft(session) {
+        try { return JSON.parse(sessionStorage.getItem(ROUND_DRAFT_KEY_PREFIX + session.id) || '{}'); }
+        catch { return {}; }
+      }
+      function saveRoundDraft(session) {
+        const draft = { notes: $('roundNoteInput').value, amounts: {} };
+        document.querySelectorAll('[data-round-input]').forEach((input) => draft.amounts[input.dataset.playerId] = input.value);
+        sessionStorage.setItem(ROUND_DRAFT_KEY_PREFIX + session.id, JSON.stringify(draft));
+      }
+      function renderRoundForm(session) {
+        const draft = loadRoundDraft(session);
+        const disabled = session.status !== 'ACTIVE' || session.players.length < 2;
+        $('roundInputs').innerHTML = session.players.length === 0
+          ? `<div class="rounded-3xl border border-dashed border-felt/20 p-4 text-sm text-ink/60">Chưa có người chơi.</div>`
+          : session.players.map((player) => `<label class="grid gap-2 rounded-3xl bg-white/70 p-3 sm:grid-cols-[1fr_190px] sm:items-center">
+              <span class="font-bold">${escapeHtml(player.displayName)}</span>
+              <input data-round-input data-player-id="${player.id}" inputmode="numeric" ${disabled ? 'disabled' : ''} value="${escapeHtml(draft.amounts?.[player.id] ?? '')}" class="min-h-11 rounded-2xl border border-felt/15 bg-white px-4 text-right font-mono font-bold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25 disabled:opacity-50" placeholder="0" />
+            </label>`).join('');
+        $('roundNoteInput').value = draft.notes || '';
+        $('roundNoteInput').disabled = disabled;
+        $('balanceLastBtn').disabled = disabled;
+        $('addRoundForm').querySelector('button[type="submit"], button:not([type])')?.removeAttribute('disabled');
+        document.querySelectorAll('[data-round-input]').forEach((input) => {
+          input.addEventListener('input', () => { updateRoundSum(); saveRoundDraft(session); });
+        });
+        $('roundNoteInput').addEventListener('input', () => saveRoundDraft(session), { once: true });
+        updateRoundSum();
+      }
+      function updateRoundSum() {
+        const inputs = [...document.querySelectorAll('[data-round-input]')];
+        const sum = inputs.reduce((total, input) => total + (Number.isNaN(parseAmount(input.value)) ? 0 : parseAmount(input.value)), 0);
+        const badge = $('roundSumBadge');
+        badge.textContent = 'Tổng: ' + signedMoney(sum);
+        badge.className = `rounded-full px-3 py-1 font-mono text-xs font-extrabold ${sum === 0 ? 'bg-mint/20 text-felt' : 'bg-clay/10 text-clay'}`;
+      }
+      function balanceLastInput() {
+        const inputs = [...document.querySelectorAll('[data-round-input]')];
+        if (inputs.length < 2) return;
+        const last = inputs[inputs.length - 1];
+        const sumExceptLast = inputs.slice(0, -1).reduce((total, input) => total + (Number.isNaN(parseAmount(input.value)) ? 0 : parseAmount(input.value)), 0);
+        last.value = String(-sumExceptLast);
+        updateRoundSum();
+        const session = getCurrentSession();
+        if (session) saveRoundDraft(session);
+      }
+
+      function renderNetResults(session, net, totalNet) {
+        const wrap = $('netResults');
+        $('netCheckBadge').textContent = totalNet === 0 ? 'NET OK' : 'Lệch ' + signedMoney(totalNet);
+        $('netCheckBadge').className = `rounded-full px-3 py-1 font-mono text-xs font-extrabold ${totalNet === 0 ? 'bg-mint/20 text-felt' : 'bg-clay/10 text-clay'}`;
+        if (session.players.length === 0) {
+          wrap.innerHTML = `<div class="rounded-3xl border border-dashed border-felt/20 p-4 text-sm text-ink/60">Chưa có dữ liệu NET.</div>`;
+          return;
+        }
+        const maxAbs = Math.max(1, ...session.players.map((p) => Math.abs(net[p.id] || 0)));
+        wrap.innerHTML = session.players
+          .map((player) => ({ player, amount: net[player.id] || 0 }))
+          .sort((a, b) => b.amount - a.amount)
+          .map(({ player, amount }) => {
+            const pct = Math.round(Math.abs(amount) / maxAbs * 100);
+            const label = amount > 0 ? 'được nhận' : amount < 0 ? 'phải trả' : 'hòa';
+            const bar = amount > 0 ? 'bg-emerald-500' : amount < 0 ? 'bg-clay' : 'bg-ink/15';
+            return `<div class="rounded-3xl bg-white/70 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <div><p class="font-bold">${escapeHtml(player.displayName)}</p><p class="text-xs font-semibold text-ink/45">${label}</p></div>
+                <p class="font-mono text-sm font-extrabold ${amount > 0 ? 'text-emerald-700' : amount < 0 ? 'text-clay' : 'text-ink/60'}">${signedMoney(amount)}</p>
+              </div>
+              <div class="mt-3 h-2 overflow-hidden rounded-full bg-ink/10"><div class="h-full ${bar}" style="width:${pct}%"></div></div>
+            </div>`;
+          }).join('');
+      }
+      function renderSettlement(session) {
+        const wrap = $('settlementResults');
+        if (session.transactions.length === 0) {
+          const canSettle = session.players.length >= 2 && session.rounds.length >= 1;
+          wrap.innerHTML = `<div class="rounded-3xl border border-dashed border-felt/20 p-4 text-sm text-ink/60">${canSettle ? 'Bấm “Chốt sổ” để tạo danh sách chuyển khoản tối ưu.' : 'Cần ít nhất 2 người chơi và 1 ván để chốt sổ.'}</div>`;
+        } else {
+          wrap.innerHTML = session.transactions.map((tx, index) => `<div class="rounded-3xl bg-white/75 p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="font-mono text-xs font-bold uppercase tracking-[.16em] text-clay">Lệnh ${index + 1}</p>
+                <p class="mt-1 text-base font-extrabold">${escapeHtml(tx.fromName)} <span class="text-ink/35">→</span> ${escapeHtml(tx.toName)}</p>
+              </div>
+              <p class="font-mono text-base font-extrabold text-felt">${money(tx.amount)}</p>
+            </div>
+          </div>`).join('') + `<button id="reopenBtn" class="mt-2 w-full rounded-2xl border border-felt/15 px-4 py-2 text-sm font-bold hover:bg-white">Mở lại phiên để sửa</button>`;
+          $('reopenBtn')?.addEventListener('click', () => { reopenSession(session); render(); showToast('Đã mở lại phiên', 'success'); });
+        }
+      }
+      function renderRounds(session) {
+        const wrap = $('roundsList');
+        if (session.rounds.length === 0) {
+          wrap.innerHTML = `<div class="rounded-3xl border border-dashed border-felt/20 p-4 text-sm text-ink/60">Chưa có ván nào.</div>`;
+          return;
+        }
+        const byId = Object.fromEntries(session.players.map((p) => [p.id, p]));
+        wrap.innerHTML = [...session.rounds].reverse().map((round) => {
+          const rows = round.results.map((result) => {
+            const player = byId[result.playerId];
+            return `<div class="flex items-center justify-between gap-3 rounded-2xl bg-white/70 px-3 py-2">
+              <span class="font-semibold">${escapeHtml(player?.displayName || 'Người chơi')}</span>
+              <span class="font-mono text-sm font-extrabold ${result.amount > 0 ? 'text-emerald-700' : result.amount < 0 ? 'text-clay' : 'text-ink/60'}">${signedMoney(result.amount)}</span>
+            </div>`;
+          }).join('');
+          return `<details class="rounded-3xl bg-white/55 p-4" ${round.roundNumber === session.rounds.length ? 'open' : ''}>
+            <summary class="cursor-pointer list-none">
+              <div class="flex items-center justify-between gap-3">
+                <div><p class="font-bold">Ván ${round.roundNumber}</p><p class="text-xs text-ink/50">${formatDate(round.createdAt)}${round.notes ? ' · ' + escapeHtml(round.notes) : ''}</p></div>
+                <span class="rounded-full bg-felt/10 px-3 py-1 font-mono text-xs font-bold text-felt">sum 0</span>
+              </div>
+            </summary>
+            <div class="mt-3 grid gap-2 sm:grid-cols-2">${rows}</div>
+          </details>`;
+        }).join('');
+      }
+
+      function bindEvents() {
+        $('homeBtn').addEventListener('click', () => { setCurrentSession(null); render(); });
+        $('newSessionTopBtn').addEventListener('click', () => {
+          setCurrentSession(null);
+          render();
+          $('sessionNameInput')?.focus();
+        });
+        $('printBtn').addEventListener('click', () => window.print());
+        $('createSessionForm').addEventListener('submit', (event) => {
+          event.preventDefault();
+          try {
+            const session = createSession($('sessionNameInput').value);
+            $('sessionNameInput').value = '';
+            render();
+            showToast(`Đã tạo phiên ${session.name}`, 'success');
+          } catch (error) { showToast(error.message, 'error'); }
+        });
+        $('addPlayerForm').addEventListener('submit', (event) => {
+          event.preventDefault();
+          const session = getCurrentSession();
+          try {
+            addPlayer(session, $('playerNameInput').value);
+            $('playerNameInput').value = '';
+            render();
+            showToast('Đã thêm người chơi', 'success');
+          } catch (error) { showToast(error.message, 'error'); }
+        });
+        $('balanceLastBtn').addEventListener('click', balanceLastInput);
+        $('addRoundForm').addEventListener('submit', (event) => {
+          event.preventDefault();
+          const session = getCurrentSession();
+          if (!session) return;
+          try {
+            const amounts = {};
+            document.querySelectorAll('[data-round-input]').forEach((input) => amounts[input.dataset.playerId] = input.value);
+            addRound(session, amounts, $('roundNoteInput').value);
+            render();
+            showToast('Đã lưu ván mới', 'success');
+          } catch (error) { showToast(error.message, 'error'); }
+        });
+        $('settleBtn').addEventListener('click', () => {
+          const session = getCurrentSession();
+          try { settleSession(session); render(); showToast('Đã chốt sổ tối ưu', 'success'); }
+          catch (error) { showToast(error.message, 'error'); }
+        });
+        $('undoRoundBtn').addEventListener('click', () => {
+          const session = getCurrentSession();
+          try { undoLastRound(session); render(); showToast('Đã hoàn tác ván cuối', 'success'); }
+          catch (error) { showToast(error.message, 'error'); }
+        });
+        $('exportBtn').addEventListener('click', () => {
+          const payload = JSON.stringify({ ...app.data, exportedAt: nowIso() }, null, 2);
+          const blob = new Blob([payload], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `quick-settle-backup-${new Date().toISOString().slice(0, 10)}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+          showToast('Đã tạo file backup JSON', 'success');
+        });
+        $('importInput').addEventListener('change', async (event) => {
+          const file = event.target.files?.[0];
+          if (!file) return;
+          try {
+            const parsed = JSON.parse(await file.text());
+            if (!parsed || !Array.isArray(parsed.sessions)) throw new Error('File JSON không đúng định dạng Quick Settle');
+            app.data = { version: 1, sessions: parsed.sessions };
+            setCurrentSession(app.data.sessions[0]?.id || null);
+            saveData();
+            render();
+            showToast('Import dữ liệu thành công', 'success');
+          } catch (error) { showToast(error.message, 'error'); }
+          event.target.value = '';
+        });
+        $('clearSessionBtn').addEventListener('click', () => {
+          const session = getCurrentSession();
+          if (!session) return showToast('Chưa chọn phiên', 'error');
+          if (!confirm(`Xóa phiên "${session.name}"?`)) return;
+          app.data.sessions = app.data.sessions.filter((s) => s.id !== session.id);
+          setCurrentSession(app.data.sessions[0]?.id || null);
+          saveData();
+          render();
+          showToast('Đã xóa phiên', 'success');
+        });
+        $('clearAllBtn').addEventListener('click', () => {
+          if (!confirm('Xóa toàn bộ dữ liệu Quick Settle trong trình duyệt này?')) return;
+          app.data = { version: 1, sessions: [] };
+          setCurrentSession(null);
+          localStorage.removeItem(STORAGE_KEY);
+          Object.keys(sessionStorage).forEach((key) => { if (key.startsWith(ROUND_DRAFT_KEY_PREFIX)) sessionStorage.removeItem(key); });
+          render();
+          showToast('Đã xóa toàn bộ dữ liệu', 'success');
+        });
+        $('seedSampleBtn').addEventListener('click', () => {
+          const session = createSession('Bàn mẫu cuối tuần');
+          ['Hoàng', 'Tuấn', 'Linh', 'Minh'].forEach((name) => addPlayer(session, name));
+          addRound(session, Object.fromEntries([[session.players[0].id, 120000], [session.players[1].id, -50000], [session.players[2].id, -70000], [session.players[3].id, 0]]), 'khởi động');
+          addRound(session, Object.fromEntries([[session.players[0].id, -30000], [session.players[1].id, 90000], [session.players[2].id, -20000], [session.players[3].id, -40000]]), 'ván lớn');
+          render();
+          showToast('Đã nạp dữ liệu mẫu', 'success');
+        });
+      }
+
+      bindEvents();
+      render();
+    })();
+  </script>
+</body>
+</html>
