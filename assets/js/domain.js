@@ -65,14 +65,14 @@
       version: 3,
       sessions: sessions.map((session) => ({
         id: session.id || uid(),
-        name: session.name || 'Phiên chơi',
+        name: session.name || 'Phiên chốt khoản',
         roomCode: session.roomCode || 'ROOM01',
         status: session.status === 'SETTLED' ? 'SETTLED' : 'ACTIVE',
         createdAt: session.createdAt || nowIso(),
         settledAt: session.settledAt || null,
         players: Array.isArray(session.players) ? session.players.map((player) => ({
           id: player.id || uid(),
-          displayName: player.displayName || player.name || 'Người chơi',
+          displayName: player.displayName || player.name || 'Thành viên',
           createdAt: player.createdAt || nowIso(),
           isActive: player.isActive !== false,
           bankId: player.bankId || '',
@@ -119,7 +119,7 @@
   }
 
   function createSession(data, name) {
-    const safeName = clampText(name || 'Phiên chơi mới', 60);
+    const safeName = clampText(name || 'Phiên mới', 60);
     if (!safeName) throw new Error('Tên phiên không được để trống');
     const session = {
       id: uid(),
@@ -138,10 +138,10 @@
 
   function addPlayer(session, payload) {
     if (!session) throw new Error('Không tìm thấy phiên');
-    if (session.status !== 'ACTIVE') throw new Error('Phiên đã chốt sổ. Hãy mở lại phiên trước khi thêm người chơi.');
+    if (session.status !== 'ACTIVE') throw new Error('Phiên đã chốt khoản. Hãy mở lại phiên trước khi thêm thành viên.');
     const name = clampText(payload.displayName, 30);
-    if (!name) throw new Error('Tên người chơi không được để trống');
-    if (session.players.some((player) => player.displayName.toLowerCase() === name.toLowerCase())) throw new Error(`Tên người chơi "${name}" đã tồn tại`);
+    if (!name) throw new Error('Tên thành viên không được để trống');
+    if (session.players.some((player) => player.displayName.toLowerCase() === name.toLowerCase())) throw new Error(`Tên thành viên "${name}" đã tồn tại`);
     session.players.push({
       id: uid(),
       displayName: name,
@@ -156,10 +156,10 @@
   function updatePlayer(session, playerId, payload) {
     if (!session) throw new Error('Không tìm thấy phiên');
     const player = playerById(session, playerId);
-    if (!player) throw new Error('Không tìm thấy người chơi');
+    if (!player) throw new Error('Không tìm thấy thành viên');
     const name = clampText(payload.displayName, 30);
-    if (!name) throw new Error('Tên người chơi không được để trống');
-    if (session.players.some((item) => item.id !== playerId && item.displayName.toLowerCase() === name.toLowerCase())) throw new Error(`Tên người chơi "${name}" đã tồn tại`);
+    if (!name) throw new Error('Tên thành viên không được để trống');
+    if (session.players.some((item) => item.id !== playerId && item.displayName.toLowerCase() === name.toLowerCase())) throw new Error(`Tên thành viên "${name}" đã tồn tại`);
     player.displayName = name;
     player.bankId = normalizeBank(payload.bankId);
     player.accountNo = normalizeAccountNo(payload.accountNo);
@@ -168,21 +168,21 @@
 
   function togglePlayerActive(session, playerId) {
     if (!session) throw new Error('Không tìm thấy phiên');
-    if (session.status !== 'ACTIVE') throw new Error('Phiên đã chốt sổ. Hãy mở lại phiên trước khi đổi trạng thái chơi.');
+    if (session.status !== 'ACTIVE') throw new Error('Phiên đã chốt khoản. Hãy mở lại phiên trước khi đổi trạng thái tham gia.');
     const player = playerById(session, playerId);
-    if (!player) throw new Error('Không tìm thấy người chơi');
+    if (!player) throw new Error('Không tìm thấy thành viên');
     player.isActive = player.isActive === false;
   }
 
   function removePlayer(session, playerId) {
     if (!session) throw new Error('Không tìm thấy phiên');
-    if (session.status !== 'ACTIVE') throw new Error('Phiên đã chốt sổ. Hãy mở lại phiên trước khi xóa người chơi.');
-    if (playerHasRounds(session, playerId)) throw new Error('Người chơi đã có dữ liệu ván. Hãy dùng “Nghỉ” thay vì xóa để giữ lịch sử.');
+    if (session.status !== 'ACTIVE') throw new Error('Phiên đã chốt khoản. Hãy mở lại phiên trước khi xóa thành viên.');
+    if (playerHasRounds(session, playerId)) throw new Error('Thành viên đã có dữ liệu lượt ghi nhận. Hãy dùng “Ngừng tham gia” thay vì xóa để giữ lịch sử.');
     session.players = session.players.filter((player) => player.id !== playerId);
   }
 
   function validateRoundAmounts(players, amountsByPlayer) {
-    if (players.length < 2) throw new Error('Cần ít nhất 2 người chơi để lưu ván');
+    if (players.length < 2) throw new Error('Cần ít nhất 2 thành viên để lưu lượt');
     const results = players.map((player) => {
       const amount = parseAmount(amountsByPlayer[player.id]);
       if (Number.isNaN(amount)) throw new Error(`Số tiền của ${player.displayName} không hợp lệ`);
@@ -190,21 +190,21 @@
       return { playerId: player.id, amount };
     });
     const sum = results.reduce((total, item) => total + item.amount, 0);
-    if (sum !== 0) throw new Error(`Tổng kết quả các người chơi phải bằng 0, hiện tại: ${signedMoney(sum)}`);
+    if (sum !== 0) throw new Error(`Tổng các khoản phải bằng 0, hiện tại: ${signedMoney(sum)}`);
     return results;
   }
 
   function addRound(session, amountsByPlayer, notes, playerScope) {
-    if (!session || session.status !== 'ACTIVE') throw new Error('Không thể thêm ván: phiên đã chốt sổ');
+    if (!session || session.status !== 'ACTIVE') throw new Error('Không thể thêm lượt: phiên đã chốt khoản');
     const results = validateRoundAmounts(playerScope || activePlayers(session), amountsByPlayer);
     session.rounds.push({ id: uid(), roundNumber: session.rounds.length + 1, notes: clampText(notes, 120), createdAt: nowIso(), results });
     resetSettlement(session);
   }
 
   function updateRound(session, roundId, amountsByPlayer, notes) {
-    if (!session || session.status !== 'ACTIVE') throw new Error('Không thể sửa ván: phiên đã chốt sổ');
+    if (!session || session.status !== 'ACTIVE') throw new Error('Không thể sửa lượt: phiên đã chốt khoản');
     const round = session.rounds.find((item) => item.id === roundId);
-    if (!round) throw new Error('Không tìm thấy ván cần sửa');
+    if (!round) throw new Error('Không tìm thấy lượt cần sửa');
     const players = round.results.map((result) => playerById(session, result.playerId)).filter(Boolean);
     round.results = validateRoundAmounts(players, amountsByPlayer);
     round.notes = clampText(notes, 120);
@@ -212,17 +212,17 @@
   }
 
   function deleteRound(session, roundId) {
-    if (!session || session.status !== 'ACTIVE') throw new Error('Phiên đã chốt sổ. Hãy mở lại phiên trước khi xóa ván.');
+    if (!session || session.status !== 'ACTIVE') throw new Error('Phiên đã chốt khoản. Hãy mở lại phiên trước khi xóa lượt.');
     const round = session.rounds.find((item) => item.id === roundId);
-    if (!round) throw new Error('Không tìm thấy ván cần xóa');
+    if (!round) throw new Error('Không tìm thấy lượt cần xóa');
     session.rounds = session.rounds.filter((item) => item.id !== roundId);
     session.rounds.forEach((item, index) => { item.roundNumber = index + 1; });
     resetSettlement(session);
   }
 
   function undoLastRound(session) {
-    if (!session || session.rounds.length === 0) throw new Error('Chưa có ván để hoàn tác');
-    if (session.status !== 'ACTIVE') throw new Error('Phiên đã chốt sổ. Hãy mở lại phiên trước khi hoàn tác.');
+    if (!session || session.rounds.length === 0) throw new Error('Chưa có lượt để hoàn tác');
+    if (session.status !== 'ACTIVE') throw new Error('Phiên đã chốt khoản. Hãy mở lại phiên trước khi hoàn tác.');
     session.rounds.pop();
     session.rounds.forEach((round, index) => { round.roundNumber = index + 1; });
     resetSettlement(session);
@@ -244,11 +244,11 @@
 
   function settleSession(session) {
     if (!session) throw new Error('Không tìm thấy phiên');
-    if (session.players.length < 2) throw new Error('Cần ít nhất 2 người chơi để chốt sổ');
-    if (session.rounds.length < 1) throw new Error('Cần ít nhất 1 ván chơi để chốt sổ');
+    if (session.players.length < 2) throw new Error('Cần ít nhất 2 thành viên để chốt khoản');
+    if (session.rounds.length < 1) throw new Error('Cần ít nhất 1 lượt ghi nhận để chốt khoản');
     const net = calculateNet(session);
     const total = Object.values(net).reduce((sum, value) => sum + value, 0);
-    if (total !== 0) throw new Error(`Dữ liệu không hợp lệ: tổng NET không bằng 0 (${signedMoney(total)})`);
+    if (total !== 0) throw new Error(`Dữ liệu không hợp lệ: tổng số dư không bằng 0 (${signedMoney(total)})`);
 
     const debtors = [];
     const creditors = [];
@@ -279,19 +279,18 @@
   }
 
   function buildVietQrUrl(session, tx) {
-    const payer = playerById(session, tx.fromPlayerId);
     const payee = playerById(session, tx.toPlayerId);
     if (!payee || !payee.bankId || !payee.accountNo) return '';
     const bank = encodeURIComponent(normalizeBank(payee.bankId));
     const accountNo = encodeURIComponent(normalizeAccountNo(payee.accountNo));
     const amount = Math.max(1, Math.trunc(Math.abs(tx.amount || 0)));
-    const addInfo = encodeURIComponent(normalizeQrInfo(`QS ${session.roomCode} ${payer?.displayName || 'nguoi tra'} tra ${payee.displayName}`));
+    const addInfo = encodeURIComponent(normalizeQrInfo(`QuickSettle ${session.roomCode}`));
     const accountName = encodeURIComponent(clampText(stripVietnamese(payee.accountName || payee.displayName), 80));
     return `https://img.vietqr.io/image/${bank}-${accountNo}-compact2.png?amount=${amount}&addInfo=${addInfo}&accountName=${accountName}`;
   }
 
   function createSampleSession(data) {
-    const session = createSession(data, 'Bàn mẫu cuối tuần');
+    const session = createSession(data, 'Du lịch cuối tuần');
     const samplePlayers = [
       { displayName: 'Hoàng', bankId: 'MBBank', accountNo: '0123456789', accountName: 'DUONG VIET HOANG' },
       { displayName: 'Tuấn', bankId: 'VCB', accountNo: '0987654321', accountName: 'NGUYEN VAN TUAN' },
@@ -299,8 +298,8 @@
       { displayName: 'Minh', bankId: 'ACB', accountNo: '', accountName: 'LE MINH' }
     ];
     samplePlayers.forEach((player) => addPlayer(session, player));
-    addRound(session, Object.fromEntries([[session.players[0].id, 120000], [session.players[1].id, -50000], [session.players[2].id, -70000], [session.players[3].id, 0]]), 'khởi động');
-    addRound(session, Object.fromEntries([[session.players[0].id, -30000], [session.players[1].id, 90000], [session.players[2].id, -20000], [session.players[3].id, -40000]]), 'ván lớn');
+    addRound(session, Object.fromEntries([[session.players[0].id, 120000], [session.players[1].id, -50000], [session.players[2].id, -70000], [session.players[3].id, 0]]), 'Tiền taxi sân bay');
+    addRound(session, Object.fromEntries([[session.players[0].id, -30000], [session.players[1].id, 90000], [session.players[2].id, -20000], [session.players[3].id, -40000]]), 'Bữa tối nhóm');
     session.players[3].isActive = false;
     return session;
   }

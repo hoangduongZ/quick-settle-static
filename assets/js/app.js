@@ -52,8 +52,8 @@
 
   function showToast(message, type = 'info') {
     const toast = $('toast');
-    const color = type === 'error' ? 'border-clay/60' : type === 'success' ? 'border-mint/50' : 'border-white/15';
-    toast.className = `no-print pointer-events-none fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-3xl border ${color} bg-felt2/95 p-4 text-card shadow-2xl backdrop-blur soft-pop`;
+    const color = type === 'error' ? 'border-danger/60' : type === 'success' ? 'border-accent/50' : 'border-white/15';
+    toast.className = `no-print pointer-events-none fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-3xl border ${color} bg-slate-900/95 p-4 text-white shadow-2xl backdrop-blur soft-pop`;
     toast.innerHTML = `<p class="font-semibold">${U.escapeHtml(message)}</p>`;
     clearTimeout(state.toastTimer);
     state.toastTimer = setTimeout(() => toast.classList.add('hidden'), 2800);
@@ -160,7 +160,7 @@
           D.togglePlayerActive(session, button.dataset.togglePlayer);
           save();
           render();
-          showToast('Đã cập nhật trạng thái người chơi', 'success');
+          showToast('Đã cập nhật trạng thái thành viên', 'success');
         } catch (error) { showToast(error.message, 'error'); }
       });
     });
@@ -171,7 +171,7 @@
           D.removePlayer(session, button.dataset.removePlayer);
           save();
           render();
-          showToast('Đã xóa người chơi', 'success');
+          showToast('Đã xóa thành viên', 'success');
         } catch (error) { showToast(error.message, 'error'); }
       });
     });
@@ -195,13 +195,13 @@
     document.querySelectorAll('[data-delete-round]').forEach((button) => {
       button.addEventListener('click', () => {
         const round = session?.rounds.find((item) => item.id === button.dataset.deleteRound);
-        if (!round || !window.confirm(`Xóa ván ${round.roundNumber}?`)) return;
+        if (!round || !window.confirm(`Xóa lượt ${round.roundNumber}?`)) return;
         try {
           D.deleteRound(session, button.dataset.deleteRound);
           state.editingRoundId = null;
           save();
           render();
-          showToast('Đã xóa ván', 'success');
+          showToast('Đã xóa lượt', 'success');
         } catch (error) { showToast(error.message, 'error'); }
       });
     });
@@ -279,7 +279,7 @@
         $('playerAccountNameInput').value = '';
         save();
         render();
-        showToast('Đã thêm người chơi', 'success');
+        showToast('Đã thêm thành viên', 'success');
       } catch (error) { showToast(error.message, 'error'); }
     });
 
@@ -296,7 +296,7 @@
         state.editingPlayerId = null;
         save();
         render();
-        showToast('Đã cập nhật người chơi', 'success');
+        showToast('Đã cập nhật thành viên', 'success');
       } catch (error) { showToast(error.message, 'error'); }
     });
 
@@ -330,7 +330,7 @@
         }
         save();
         render();
-        showToast(wasEditingRound ? 'Đã cập nhật ván' : 'Đã lưu ván mới', 'success');
+        showToast(wasEditingRound ? 'Đã cập nhật lượt' : 'Đã lưu lượt mới', 'success');
       } catch (error) { showToast(error.message, 'error'); }
     });
 
@@ -341,7 +341,7 @@
         setScreen('settlement');
         save();
         render();
-        showToast('Đã chốt sổ tối ưu', 'success');
+        showToast('Đã chốt khoản tối ưu', 'success');
       } catch (error) { showToast(error.message, 'error'); }
     });
 
@@ -351,7 +351,7 @@
         D.undoLastRound(session);
         save();
         render();
-        showToast('Đã hoàn tác ván cuối', 'success');
+        showToast('Đã hoàn tác lượt cuối', 'success');
       } catch (error) { showToast(error.message, 'error'); }
     });
 
@@ -381,7 +381,7 @@
     });
 
     $('clearAllBtn').addEventListener('click', () => {
-      if (!window.confirm('Xóa toàn bộ dữ liệu Quick Settle trên máy này?')) return;
+      if (!window.confirm('Xóa toàn bộ dữ liệu Quick Settle trên thiết bị này?')) return;
       state.data = { version: 3, sessions: [] };
       state.forceCreateView = false;
       setCurrentSession(null);

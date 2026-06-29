@@ -1,5 +1,6 @@
 Quick Settle static release
-Version: 2026-06-29-refactor-02
+Version: 2026-06-29-neutral-rebrand-01
+Note: Định vị trung tính (chốt khoản nhóm cho hoạt động hợp pháp), bỏ toàn bộ ngôn ngữ/giao diện liên quan cờ bạc.
 Includes:
 - index.html
 - assets/css/styles.css
