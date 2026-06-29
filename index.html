@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Quick Settle — Chốt sổ chơi bài</title>
   <meta name="description" content="Quick Settle giúp tạo phiên chơi, quản lý người chơi, nhập kết quả từng ván, chốt sổ và tạo QR chuyển khoản." />
-  <script src="./assets/js/tailwind.config.js"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%2312372A'/><circle cx='16' cy='16' r='14' fill='none' stroke='%23C9973A' stroke-width='2' stroke-dasharray='4 3'/><circle cx='16' cy='16' r='6' fill='%23FFF9EC'/></svg>" />
+  <!-- Tailwind Play CDN phải nạp TRƯỚC, sau đó mới gán tailwind.config (nếu ngược lại, CDN sẽ ghi đè và bỏ qua config tuỳ biến). -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./assets/js/tailwind.config.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,750&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -72,7 +74,7 @@
         </section>
       </aside>
 
-      <section class="space-y-5">
+      <section class="min-w-0 space-y-5">
         <div id="emptyState" class="hidden rail-card rounded-[2.2rem] p-8 text-ink shadow-card print-card sm:p-10">
           <p class="font-mono text-xs font-bold uppercase tracking-[.24em] text-clay">Bắt đầu</p>
           <h2 class="mt-2 max-w-2xl font-display text-4xl font-bold leading-tight sm:text-5xl">Tạo một phiên chơi, nhập người chơi và kết quả từng ván.</h2>
@@ -141,10 +143,10 @@
             <datalist id="bankOptions"></datalist>
 
             <form id="addPlayerForm" class="mt-5 grid gap-3 rounded-[1.6rem] bg-white/60 p-4 lg:grid-cols-[1.1fr_.8fr_.9fr_.9fr_auto]">
-              <input id="playerNameInput" maxlength="30" class="min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên người chơi *" />
-              <input id="playerBankInput" list="bankOptions" maxlength="20" class="min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Mã ngân hàng, ví dụ MBBank" />
-              <input id="playerAccountInput" maxlength="30" class="min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Số tài khoản" />
-              <input id="playerAccountNameInput" maxlength="80" class="min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên thụ hưởng" />
+              <input id="playerNameInput" maxlength="30" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên người chơi *" />
+              <input id="playerBankInput" list="bankOptions" maxlength="20" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Mã ngân hàng, ví dụ MBBank" />
+              <input id="playerAccountInput" maxlength="30" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Số tài khoản" />
+              <input id="playerAccountNameInput" maxlength="80" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên thụ hưởng" />
               <button class="rounded-2xl bg-felt px-5 py-2 font-extrabold text-card hover:bg-felt2">Thêm</button>
             </form>
 
@@ -154,10 +156,10 @@
                 <button id="cancelEditPlayerBtn" type="button" class="rounded-full border border-felt/15 px-3 py-1.5 text-xs font-bold hover:bg-white">Hủy sửa</button>
               </div>
               <div class="mt-3 grid gap-3 lg:grid-cols-4">
-                <input id="editPlayerNameInput" maxlength="30" class="min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên người chơi" />
-                <input id="editPlayerBankInput" list="bankOptions" maxlength="20" class="min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Mã ngân hàng" />
-                <input id="editPlayerAccountInput" maxlength="30" class="min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Số tài khoản" />
-                <input id="editPlayerAccountNameInput" maxlength="80" class="min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên thụ hưởng" />
+                <input id="editPlayerNameInput" maxlength="30" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên người chơi" />
+                <input id="editPlayerBankInput" list="bankOptions" maxlength="20" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Mã ngân hàng" />
+                <input id="editPlayerAccountInput" maxlength="30" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Số tài khoản" />
+                <input id="editPlayerAccountNameInput" maxlength="80" class="min-w-0 min-h-11 rounded-2xl border border-felt/15 bg-white px-4 font-semibold outline-none focus:border-felt focus:ring-4 focus:ring-mint/25" placeholder="Tên thụ hưởng" />
               </div>
               <button class="mt-3 rounded-2xl bg-felt px-5 py-2 text-sm font-extrabold text-card hover:bg-felt2">Lưu thay đổi</button>
             </form>

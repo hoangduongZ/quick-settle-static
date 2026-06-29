@@ -1,6 +1,6 @@
 # Báo cáo điều tra lỗi giao diện — Quick Settle
 
-> **Trạng thái:** Mới điều tra, **chưa chỉnh sửa source code**. Tài liệu này mô tả lỗi + nguyên nhân gốc + đề xuất sửa, chờ xác nhận trước khi áp dụng.
+> **Trạng thái:** ✅ **ĐÃ SỬA & XÁC MINH** (xem [Mục 10](#10-đã-sửa--xác-minh-sau-khi-chỉnh-sửa)). Tài liệu này giữ lại toàn bộ quá trình điều tra + nguyên nhân gốc + cách sửa.
 > **Ngày:** 2026-06-29 · **Phiên bản kiểm tra:** `2026-06-29-refactor-02`
 > **Công cụ:** Playwright (playwright-core + Chrome hệ thống), phục vụ tĩnh qua `python -m http.server`, quét ở các bề rộng 375 / 768 / 1024 / 1280 / 1440 / 1920px.
 
@@ -228,4 +228,42 @@ body.felt-pattern {
 
 ---
 
-> **Bước tiếp theo:** Chờ xác nhận. Khi được phép, tôi sẽ áp dụng các sửa đổi theo thứ tự ở mục 7 và kiểm tra lại bằng Playwright (chụp lại "before/after" ở các bề rộng, kiểm độ tương phản chữ trên nền tối).
+## 10. Đã sửa & xác minh (sau khi chỉnh sửa)
+
+Áp dụng theo đúng thứ tự ở Mục 7: **(A + D) → C → E**.
+
+### Các thay đổi đã thực hiện
+| Lỗi | File | Thay đổi |
+|-----|------|----------|
+| **A** | [`index.html`](../index.html#L8-L11) | Đảo thứ tự: nạp `cdn.tailwindcss.com` **trước**, rồi mới nạp `tailwind.config.js` |
+| **B** | — | Tự khôi phục sau khi sửa A (không sửa thêm) |
+| **C** | [`index.html:75`](../index.html#L75) | Thêm `min-w-0` cho `<section>` cột nội dung |
+| **C** | [`index.html`](../index.html) | Thêm `min-w-0` cho 8 `<input>` của form thêm/sửa người chơi |
+| **D** | [`assets/css/styles.css`](../assets/css/styles.css) | Gộp gradient xanh vào `.felt-pattern` (texture chồng lên nền xanh) + `background-color: #0B241C` cho `body` |
+| **E** | [`index.html`](../index.html) | Thêm `<link rel="icon">` dạng SVG data-URI (không cần file, không gọi mạng) |
+
+### Kết quả đo lại bằng Playwright (sau sửa)
+```
+Màu (Tailwind config ĐÃ áp dụng):
+  bg-felt   = rgb(18, 55, 42)      ✅   bg-card  = rgb(255, 249, 236)  ✅
+  text-card = rgb(255, 249, 236)   ✅   bg-clay  = rgb(183, 85, 47)    ✅
+  font-display = "Fraunces, Georgia, serif"   ✅
+Font (đã tải thật): body=Inter ✅ · Inter loaded ✅ · Fraunces loaded ✅ · JetBrains loaded ✅
+Nền: body backgroundColor = rgb(11, 36, 28) (#0B241C)  ✅ · header title = rgb(255,249,236) kem (tương phản OK) ✅
+Modal: overlay = rgba(11,36,28,0.8) ✅ · card = rgb(255,249,236) ĐỤC ✅ · text = ink ✅
+Tràn ngang (màn Người chơi): 1024 ❌→✅ · 1280 ❌→✅ · 1366 ✅ · 1440 ✅ · mobile 375 ✅
+favicon: trình duyệt KHÔNG còn request /favicon.ico (dùng icon inline) → hết 404 ✅
+Không còn lỗi 404; mọi asset trả 200.
+```
+
+### Ảnh sau khi sửa
+- [`screenshots/after/01-landing.png`](./screenshots/after/01-landing.png) — nền felt xanh, font Fraunces, chữ header kem
+- [`screenshots/after/02-modal.png`](./screenshots/after/02-modal.png) — modal đục, overlay làm tối nền
+- [`screenshots/after/03-players-desktop.png`](./screenshots/after/03-players-desktop.png) — @1280 đủ 4 tab + form vừa khít, hết tràn
+- [`screenshots/after/04-settlement.png`](./screenshots/after/04-settlement.png) — chốt sổ + QR hiển thị đúng
+- [`screenshots/after/05-mobile.png`](./screenshots/after/05-mobile.png) — mobile 375px gọn gàng
+
+### Chưa xử lý (ngoài phạm vi lần này)
+- Cảnh báo dùng `cdn.tailwindcss.com` ở production (nên build CSS tĩnh — Mục 8).
+- Phụ thuộc internet cho Google Fonts & QR VietQR; QR chưa có `onerror` khi ảnh lỗi.
+- Cảnh báo accessibility của IDE (input thiếu `<label>`, nên dùng `<dialog>`) — không phải lỗi được báo.
